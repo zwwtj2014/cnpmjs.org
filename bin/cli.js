@@ -21,6 +21,7 @@ var fs = require('fs');
 var mkdirp = require('mkdirp');
 var treekill = require('treekill');
 var version = require('../package.json').version;
+var os = require('os');
 
 function list(val) {
   return val.split(',');
@@ -51,7 +52,7 @@ function start(options) {
   stop(options)
     // wait for "stop" method to remove the pid file
     .then(function () {
-      var dataDir = options.dataDir || path.join(process.env.HOME, '.cnpmjs.org');
+      var dataDir = options.dataDir || path.join(os.homedir(), '.cnpmjs.org');
       mkdirp.sync(dataDir);
 
       var configfile = path.join(dataDir, 'config.json');
@@ -85,7 +86,7 @@ function start(options) {
       debug('save config %s to %s', configJSON, configfile);
 
       // if sqlite db file not exists, init first
-      initDatabase(function() {
+      initDatabase(function () {
         require('../dispatch');
       });
 
@@ -94,7 +95,7 @@ function start(options) {
 }
 
 function stop(options) {
-  var dataDir = options.dataDir || path.join(process.env.HOME, '.cnpmjs.org');
+  var dataDir = options.dataDir || path.join(os.homedir(), '.cnpmjs.org');
   var pidfile = path.join(dataDir, 'pid');
   return new Promise(function (resolve) {
     if (!fs.existsSync(pidfile)) {
@@ -117,7 +118,9 @@ function stop(options) {
 function initDatabase(callback) {
   var models = require('../models');
 
-  models.sequelize.sync({ force: false })
+  models.sequelize.sync({
+      force: false
+    })
     .then(function () {
       models.Total.init(function (err) {
         if (err) {
